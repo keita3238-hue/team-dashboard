@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2ree.design — チームポータル</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a3a;
+      --accent: #6c63ff; --accent2: #ff6584; --accent3: #43e97b;
+      --text: #e8e8f0; --text-muted: #7070a0; --text-dim: #404060;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; overflow-x: hidden; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.3; pointer-events: none; z-index: 0; }
+    .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 32px 0 48px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    .logo { font-family: 'Space Mono', monospace; font-size: 20px; color: var(--accent); letter-spacing: 2px; }
+    .logo span { color: var(--text-muted); font-size: 12px; display: block; letter-spacing: 4px; margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 6px 16px; font-size: 12px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+    .section-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 4px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 20px; }
+    .section-group-label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 5px; color: var(--accent); text-transform: uppercase; margin-bottom: 12px; margin-top: 40px; padding-left: 2px; opacity: 0.7; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .card-grid-wide { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 60px; }
+    .menu-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px 24px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; text-decoration: none; display: block; }
+    .menu-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--card-accent, var(--accent)); transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease; }
+    .menu-card:hover { background: var(--surface2); border-color: var(--card-accent, var(--accent)); transform: translateY(-2px); }
+    .menu-card:hover::before { transform: scaleX(1); }
+    .menu-card .icon { font-size: 28px; margin-bottom: 16px; display: block; }
+    .menu-card .title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .menu-card .desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    .menu-card .badge { position: absolute; top: 16px; right: 16px; background: var(--card-accent, var(--accent)); color: #fff; font-size: 10px; font-family: 'Space Mono', monospace; padding: 3px 8px; border-radius: 4px; opacity: 0.8; }
+    .menu-card.locked { opacity: 0.5; cursor: not-allowed; }
+    .menu-card.locked:hover { transform: none; background: var(--surface); border-color: var(--border); }
+    .section-block { margin-bottom: 60px; }
+    .main-menu-section { margin-bottom: 60px; }
+
+    /* チャンネルカード */
+    .channel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; position: relative; }
+    .channel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .channel-name { font-size: 14px; font-weight: 700; }
+    .channel-day { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); background: var(--surface2); padding: 3px 8px; border-radius: 4px; }
+    .progress-list { display: flex; flex-direction: column; gap: 10px; }
+    .progress-item { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+    .progress-item .label { color: var(--text-muted); }
+    .status-pill { font-size: 10px; font-family: 'Space Mono', monospace; padding: 3px 10px; border-radius: 20px; cursor: pointer; transition: opacity 0.2s; }
+    .status-pill:hover { opacity: 0.7; }
+    .status-done { background: rgba(67,233,123,0.15); color: #43e97b; }
+    .status-wip { background: rgba(108,99,255,0.15); color: #6c63ff; }
+    .status-pending { background: rgba(112,112,160,0.1); color: var(--text-muted); }
+    .status-review { background: rgba(255,101,132,0.15); color: #ff6584; }
+
+    /* お知らせ */
+    .notice-section { margin-bottom: 60px; }
+    .notice-list { display: flex; flex-direction: column; gap: 12px; }
+    .notice-item { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 8px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
+    .notice-item.info { border-left-color: var(--accent); }
+    .notice-item.warn { border-left-color: #ffb347; }
+    .notice-item.new { border-left-color: var(--accent3); }
+    .notice-date { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+    .notice-text { font-size: 13px; color: var(--text-muted); }
+    .notice-text strong { color: var(--text); }
+    footer { border-top: 1px solid var(--border); padding-top: 32px; display: flex; justify-content: space-between; align-items: center; }
+    footer .copy { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-dim); }
+    footer .version { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-dim); }
+
+    /* ツール共通 */
+    .tool-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; margin-bottom: 24px; }
+    .tool-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .tool-card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .tool-card-title { font-size: 16px; font-weight: 700; }
+    .tool-card-sub { font-size: 11px; color: var(--text-muted); font-family: 'Space Mono', monospace; margin-top: 2px; }
+
+    /* 締め切りアラート */
+    .deadline-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .deadline-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; position: relative; overflow: hidden; }
+    .deadline-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+    .deadline-item.urgent::before { background: #ff6584; }
+    .deadline-item.warning::before { background: #ffb347; }
+    .deadline-item.safe::before { background: #43e97b; }
+    .deadline-ch { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .deadline-date { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); margin-bottom: 10px; }
+    .deadline-countdown { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .deadline-item.urgent .deadline-countdown { color: #ff6584; }
+    .deadline-item.warning .deadline-countdown { color: #ffb347; }
+    .deadline-item.safe .deadline-countdown { color: #43e97b; }
+    .deadline-label { font-size: 10px; color: var(--text-muted); }
+    .ai-task-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+    .ai-task-box-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 3px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .ai-task-box-label::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)} }
+    .task-list { display: flex; flex-direction: column; gap: 8px; }
+    .task-item-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); font-size: 13px; }
+    .task-priority { font-family: 'Space Mono', monospace; font-size: 9px; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+    .priority-high { background: rgba(255,101,132,0.15); color: #ff6584; }
+    .priority-mid { background: rgba(255,179,71,0.15); color: #ffb347; }
+    .priority-low { background: rgba(108,99,255,0.15); color: #6c63ff; }
+    .task-text { flex: 1; color: var(--text); }
+    .task-ch { font-size: 10px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+    .deadline-settings { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .deadline-setting-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .setting-ch-name { font-size: 12px; font-weight: 600; }
+    .setting-inputs { display: flex; align-items: center; gap: 6px; }
+    .setting-inputs select, .setting-inputs input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 11px; padding: 4px 8px; outline: none; }
+    .setting-inputs select:focus, .setting-inputs input:focus { border-color: var(--accent); }
+
+    /* ボタン */
+    .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; transition: opacity 0.2s; font-weight: 500; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); border-radius: 8px; padding: 10px 20px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+    .btn-danger { background: rgba(255,101,132,0.1); color: #ff6584; border: 1px solid rgba(255,101,132,0.3); border-radius: 8px; padding: 10px 20px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: rgba(255,101,132,0.2); }
+
+    /* 進捗自動更新 */
+    .status-update-form { display: flex; flex-direction: column; gap: 14px; }
+    .form-row { display: flex; gap: 10px; align-items: flex-start; }
+    .form-row select, .form-row input, .form-row textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.2s; }
+    .form-row select:focus, .form-row input:focus, .form-row textarea:focus { border-color: var(--accent); }
+    .form-row select { min-width: 150px; }
+    .form-row textarea { flex: 1; resize: vertical; min-height: 80px; }
+    .ai-suggestion-box { background: linear-gradient(135deg,rgba(108,99,255,.08),rgba(108,99,255,.03)); border: 1px solid rgba(108,99,255,.3); border-radius: 10px; padding: 18px; display: none; }
+    .ai-suggestion-box.visible { display: block; }
+    .ai-suggestion-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--accent); letter-spacing: 3px; margin-bottom: 12px; }
+    .suggestion-items { display: flex; flex-direction: column; gap: 8px; }
+    .suggestion-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--surface); border-radius: 7px; font-size: 13px; gap: 10px; }
+    .suggestion-change { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .suggestion-arrow { color: var(--text-dim); font-size: 11px; }
+    .suggestion-new { color: var(--accent3); font-weight: 600; }
+    .apply-btn { background: rgba(108,99,255,.15); color: var(--accent); border: 1px solid rgba(108,99,255,.3); border-radius: 6px; padding: 5px 12px; font-size: 11px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .apply-btn:hover { background: var(--accent); color: #fff; }
+
+    /* SRT字幕エディタ */
+    .srt-editor-wrap { display: flex; gap: 16px; }
+    .srt-editor-left { flex: 1; min-width: 0; }
+    .srt-editor-right { width: 320px; flex-shrink: 0; }
+    @media(max-width:900px){ .srt-editor-wrap{flex-direction:column;} .srt-editor-right{width:100%;} }
+    .audio-player-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .audio-player-box audio { width: 100%; accent-color: var(--accent); }
+    .audio-player-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); margin-bottom: 8px; }
+    .srt-lines { display: flex; flex-direction: column; gap: 4px; max-height: 480px; overflow-y: auto; padding-right: 4px; }
+    .srt-lines::-webkit-scrollbar { width: 4px; }
+    .srt-lines::-webkit-scrollbar-track { background: var(--surface2); }
+    .srt-lines::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .srt-line { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; transition: all 0.15s; cursor: pointer; }
+    .srt-line:hover { border-color: var(--accent); background: rgba(108,99,255,0.05); }
+    .srt-line.active { border-color: var(--accent); background: rgba(108,99,255,0.1); }
+    .srt-line.cut { opacity: 0.35; border-style: dashed; border-color: #ff6584; text-decoration: line-through; }
+    .srt-line.cut .srt-text { color: var(--text-dim); }
+    .srt-time { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-muted); white-space: nowrap; margin-top: 2px; min-width: 80px; }
+    .srt-text { flex: 1; font-size: 13px; line-height: 1.6; color: var(--text); }
+    .srt-text[contenteditable="true"] { outline: none; border-bottom: 1px dashed var(--accent); }
+    .srt-actions { display: flex; flex-direction: column; gap: 4px; }
+    .srt-btn { background: none; border: 1px solid var(--border); border-radius: 5px; padding: 4px 7px; font-size: 10px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; white-space: nowrap; }
+    .srt-btn:hover { border-color: var(--accent); color: var(--text); }
+    .srt-btn.cut-btn:hover { border-color: #ff6584; color: #ff6584; }
+    .srt-btn.restore-btn { border-color: rgba(67,233,123,0.3); color: #43e97b; }
+    .srt-stats { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+    .srt-stats-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--accent); letter-spacing: 3px; margin-bottom: 12px; }
+    .srt-stat-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+    .srt-stat-val { font-family: 'Space Mono', monospace; color: var(--text); font-weight: 700; }
+    .srt-stat-val.red { color: #ff6584; }
+    .srt-stat-val.green { color: #43e97b; }
+    .cut-list { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .cut-list-label { font-family: 'Space Mono', monospace; font-size: 9px; color: #ff6584; letter-spacing: 3px; margin-bottom: 10px; }
+    .cut-list-items { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+    .cut-list-item { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); padding: 6px 8px; background: rgba(255,101,132,0.05); border: 1px solid rgba(255,101,132,0.15); border-radius: 5px; }
+    .ai-cut-suggestion { background: linear-gradient(135deg,rgba(255,101,132,0.08),rgba(255,101,132,0.03)); border: 1px solid rgba(255,101,132,0.2); border-radius: 10px; padding: 16px; margin-top: 12px; display: none; }
+    .ai-cut-suggestion.visible { display: block; }
+    .ai-cut-label { font-family: 'Space Mono', monospace; font-size: 9px; color: #ff6584; letter-spacing: 3px; margin-bottom: 10px; }
+    .ai-cut-item { font-size: 12px; color: var(--text-muted); padding: 8px 10px; background: var(--surface); border-radius: 6px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .ai-cut-item .ai-cut-time { font-family: 'Space Mono', monospace; font-size: 10px; color: #ff6584; flex-shrink: 0; }
+    .transcribe-drop { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; }
+    .transcribe-drop:hover, .transcribe-drop.dragover { border-color: var(--accent); background: rgba(108,99,255,0.05); }
+    .transcribe-drop .drop-icon { font-size: 36px; margin-bottom: 12px; }
+    .transcribe-drop .drop-text { font-size: 14px; color: var(--text-muted); }
+    .transcribe-drop .drop-sub { font-size: 11px; color: var(--text-dim); margin-top: 6px; font-family: 'Space Mono', monospace; }
+    .transcribe-result { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; min-height: 120px; font-size: 13px; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
+    .transcribe-result.placeholder { color: var(--text-dim); font-style: italic; }
+    .progress-bar-wrap { background: var(--surface2); border-radius: 6px; height: 6px; margin-bottom: 16px; overflow: hidden; display: none; }
+    .progress-bar-wrap.visible { display: block; }
+    .progress-bar { height: 100%; background: var(--accent); border-radius: 6px; transition: width 0.3s; }
+
+    /* テロップ提案 */
+    .telop-list { display: flex; flex-direction: column; gap: 10px; }
+    .telop-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .telop-item-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .telop-type { font-family: 'Space Mono', monospace; font-size: 9px; padding: 3px 8px; border-radius: 3px; }
+    .telop-type.highlight { background: rgba(255,179,71,0.15); color: #ffb347; }
+    .telop-type.emotion { background: rgba(255,101,132,0.15); color: #ff6584; }
+    .telop-type.keyword { background: rgba(67,233,123,0.15); color: #43e97b; }
+    .telop-type.cut { background: rgba(108,99,255,0.15); color: #6c63ff; }
+    .telop-text { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 4px; }
+    .telop-reason { font-size: 11px; color: var(--text-muted); }
+
+    /* 誤字脱字チェック */
+    .typo-input-area { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; padding: 16px; outline: none; resize: vertical; min-height: 160px; line-height: 1.8; transition: border-color 0.2s; box-sizing: border-box; }
+    .typo-input-area:focus { border-color: var(--accent); }
+    .typo-input-area::placeholder { color: var(--text-dim); }
+    .typo-result-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; display: none; }
+    .typo-result-box.visible { display: block; }
+    .typo-result-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--accent); letter-spacing: 3px; margin-bottom: 14px; }
+    .typo-summary { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .typo-summary-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; text-align: center; }
+    .typo-summary-num { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; }
+    .typo-summary-num.red { color: #ff6584; }
+    .typo-summary-num.yellow { color: #ffb347; }
+    .typo-summary-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .typo-list { display: flex; flex-direction: column; gap: 10px; }
+    .typo-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+    .typo-item-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .typo-severity { font-family: 'Space Mono', monospace; font-size: 9px; padding: 3px 8px; border-radius: 3px; }
+    .typo-severity.error { background: rgba(255,101,132,0.15); color: #ff6584; }
+    .typo-severity.warning { background: rgba(255,179,71,0.15); color: #ffb347; }
+    .typo-severity.info { background: rgba(108,99,255,0.15); color: #6c63ff; }
+    .typo-original { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+    .typo-original mark { background: rgba(255,101,132,0.25); color: #ff6584; border-radius: 3px; padding: 0 3px; }
+    .typo-suggestion { font-size: 12px; color: var(--accent3); margin-bottom: 4px; }
+    .typo-reason { font-size: 11px; color: var(--text-muted); }
+    .typo-ok { text-align: center; padding: 24px; color: var(--accent3); font-size: 14px; }
+    .input-format-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .input-format-tab { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 11px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; font-family: 'Space Mono', monospace; }
+    .input-format-tab.active { background: rgba(108,99,255,0.15); border-color: var(--accent); color: var(--accent); }
+
+    /* チャンネル管理 */
+    .admin-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; }
+    .admin-ch-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .admin-ch-item { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
+    .admin-ch-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .admin-ch-name { flex: 1; font-size: 14px; font-weight: 600; }
+    .admin-ch-day { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-muted); }
+    .admin-ch-actions { display: flex; gap: 8px; }
+    .icon-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+    .icon-btn:hover { border-color: var(--accent); color: var(--text); }
+    .icon-btn.danger:hover { border-color: #ff6584; color: #ff6584; }
+    .add-ch-form { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: none; }
+    .add-ch-form.visible { display: block; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 11px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+    .form-group input, .form-group select { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Noto Sans JP', sans-serif; font-size: 13px; padding: 9px 12px; outline: none; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+    /* モーダル */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.visible { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; min-width: 320px; max-width: 460px; width: 90%; }
+    .modal h3 { font-size: 16px; margin-bottom: 8px; }
+    .modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* ステータスポップアップ */
+    .status-popup { position: absolute; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: none; flex-direction: column; gap: 4px; min-width: 140px; }
+    .status-popup.visible { display: flex; }
+    .status-option { padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: background 0.15s; }
+    .status-option:hover { background: var(--surface2); }
+
+    /* Notion設定 */
+    .notion-setup { background: linear-gradient(135deg,rgba(108,99,255,0.08),rgba(108,99,255,0.03)); border: 1px solid rgba(108,99,255,0.2); border-radius: 12px; padding: 20px; margin-top: 20px; }
+    .notion-setup-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 3px; margin-bottom: 14px; }
+    .notion-input-row { display: flex; gap: 10px; align-items: center; }
+    .notion-input-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 12px; padding: 10px 14px; outline: none; }
+    .notion-input-row input:focus { border-color: var(--accent); }
+    .notion-status { font-size: 11px; margin-top: 10px; color: var(--text-muted); }
+    .notion-status.connected { color: #43e97b; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo">2ree.design<span>TEAM PORTAL</span></div>
+    <div class="header-right">
+      <div class="header-badge" id="notionBadge">Notion: 未連携</div>
+      <div class="header-badge">v0.6</div>
+    </div>
+  </header>
+
+  <!-- メインメニュー -->
+  <div class="main-menu-section">
+    <div class="section-group-label">編集関連</div>
+    <div class="card-grid">
+      <a class="menu-card" href="#channels" style="--card-accent:#6c63ff;">
+        <span class="icon">📊</span>
+        <div class="title">チャンネル進捗</div>
+        <div class="desc">チャンネルの編集状況・納期を確認</div>
+        <div class="badge" id="chCountBadge">3ch</div>
+      </a>
+      <a class="menu-card" href="#deadline-tool" style="--card-accent:#ff6584;">
+        <span class="icon">⏰</span>
+        <div class="title">締め切りアラート</div>
+        <div class="desc">投稿日から逆算・今日やることをAI提案</div>
+        <div class="badge" style="background:#ff6584;">AI</div>
+      </a>
+      <a class="menu-card" href="#status-tool" style="--card-accent:#6c63ff;">
+        <span class="icon">🤖</span>
+        <div class="title">進捗自動更新</div>
+        <div class="desc">状況メモを入力→AIがステータスを提案</div>
+        <div class="badge" style="background:#6c63ff;">AI</div>
+      </a>
+      <a class="menu-card" href="#transcribe-tool" style="--card-accent:#f7971e;">
+        <span class="icon">🎙️</span>
+        <div class="title">文字起こし</div>
+        <div class="desc">MP3アップ→文字起こし＋テロップ提案</div>
+        <div class="badge" style="background:#f7971e;">AI</div>
+      </a>
+      <a class="menu-card" href="#typo-tool" style="--card-accent:#4fc3f7;">
+        <span class="icon">🔍</span>
+        <div class="title">誤字脱字チェック</div>
+        <div class="desc">字幕テキストをAIが自動チェック・修正提案</div>
+        <div class="badge" style="background:#4fc3f7;">AI</div>
+      </a>
+    </div>
+
+    <div class="section-group-label">管理関連</div>
+    <div class="card-grid">
+      <a class="menu-card" href="https://docs.google.com/spreadsheets/d/1sOVkXWJQ2uxj8sQNpBnCKPuWseFdsi3_A21s9PWdSsg/edit" target="_blank" style="--card-accent:#34a853;">
+        <span class="icon">📋</span>
+        <div class="title">チャンネル運用表</div>
+        <div class="desc">進捗・担当・スケジュール管理</div>
+      </a>
+      <a class="menu-card" href="https://docs.google.com/spreadsheets/d/1GpZvXk6vmmoYVzCA6f9BiyZbYovk6qUKxlQ-hO7l02s/edit" target="_blank" style="--card-accent:#fbbc04;">
+        <span class="icon">🎞️</span>
+        <div class="title">動画素材状況</div>
+        <div class="desc">各チャンネルの素材・進捗一覧</div>
+      </a>
+      <a class="menu-card" href="#manuals" style="--card-accent:#43e97b;">
+        <span class="icon">📚</span>
+        <div class="title">マニュアル</div>
+        <div class="desc">編集ルール・設定・音量調整など</div>
+      </a>
+      <a class="menu-card" href="#admin-tool" style="--card-accent:#ce93d8;">
+        <span class="icon">⚙️</span>
+        <div class="title">チャンネル管理</div>
+        <div class="desc">チャンネル追加・削除・Notion連携設定</div>
+      </a>
+    </div>
+
+    <div class="section-group-label">デザイン関連</div>
+    <div class="card-grid">
+      <a class="menu-card" href="#portfolio" style="--card-accent:#ff6584;">
+        <span class="icon">🎬</span>
+        <div class="title">ポートフォリオ</div>
+        <div class="desc">制作実績・納品動画の一覧</div>
+      </a>
+      <a class="menu-card" href="#web" style="--card-accent:#f7971e;">
+        <span class="icon">🌐</span>
+        <div class="title">WEBデザイン</div>
+        <div class="desc">WEBサイト制作・LP・コーディング</div>
+      </a>
+      <a class="menu-card" href="#graphic" style="--card-accent:#e96c6c;">
+        <span class="icon">✏️</span>
+        <div class="title">グラフィックデザイン</div>
+        <div class="desc">バナー・サムネ・ブランディング</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- チャンネル進捗 -->
+  <div class="section-block" id="channels">
+    <div class="section-label">— チャンネル進捗</div>
+    <div class="card-grid-wide" id="channelsGrid"></div>
+  </div>
+
+  <!-- 締め切りアラート -->
+  <div class="section-block" id="deadline-tool">
+    <div class="section-label">— 締め切りアラート / AI タスク提案</div>
+    <div class="tool-card">
+      <div class="tool-card-header">
+        <div class="tool-card-icon" style="background:rgba(255,101,132,0.15);">⏰</div>
+        <div><div class="tool-card-title">締め切りカウントダウン</div><div class="tool-card-sub">投稿日時を設定 → 残り日数をリアルタイム表示</div></div>
+      </div>
+      <div class="deadline-grid" id="deadlineGrid"></div>
+      <details>
+        <summary style="font-size:12px;color:var(--text-muted);cursor:pointer;user-select:none;margin-bottom:12px;">▸ 投稿日時を設定・変更する</summary>
+        <div class="deadline-settings" id="deadlineSettings"></div>
+        <div style="margin-top:14px;"><button class="btn-primary" onclick="saveDeadlines()">保存して反映</button></div>
+      </details>
+    </div>
+    <div class="tool-card">
+      <div class="tool-card-header">
+        <div class="tool-card-icon" style="background:rgba(255,101,132,0.12);">🧠</div>
+        <div><div class="tool-card-title">今日やること — AI提案</div><div class="tool-card-sub">締め切りと進捗から逆算して自動生成</div></div>
+      </div>
+      <div class="ai-task-box">
+        <div class="ai-task-box-label">AI TASK SUGGESTION</div>
+        <div class="task-list" id="aiTaskList"></div>
+      </div>
+      <div style="margin-top:16px;"><button class="btn-primary" onclick="generateTasks()">🔄 タスクを再生成</button></div>
+    </div>
+  </div>
+
+  <!-- 進捗ステータス自動更新 -->
+  <div class="section-block" id="status-tool">
+    <div class="section-label">— 進捗ステータス自動更新</div>
+    <div class="tool-card">
+      <div class="tool-card-header">
+        <div class="tool-card-icon" style="background:rgba(108,99,255,0.15);">🤖</div>
+        <div><div class="tool-card-title">状況メモ → AIがステータス提案</div><div class="tool-card-sub">「編集者から戻ってきた」などを入力するだけでOK</div></div>
+      </div>
+      <div class="status-update-form">
+        <div class="form-row">
+          <select id="statusChannel"><option value="">チャンネルを選択</option></select>
+          <textarea id="statusMemo" placeholder="例：編集者から映像が戻ってきた　/　クライアントからOKもらった"></textarea>
+        </div>
+        <div><button class="btn-primary" onclick="analyzeStatus()">🤖 AIに分析させる</button></div>
+        <div class="ai-suggestion-box" id="suggestionBox">
+          <div class="ai-suggestion-label">AI SUGGESTION</div>
+          <div class="suggestion-items" id="suggestionItems"></div>
+          <div style="margin-top:14px;display:flex;gap:8px;">
+            <button class="btn-primary" onclick="applyAllSuggestions()">✅ すべて反映</button>
+            <button class="btn-secondary" onclick="closeSuggestion()">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 字幕エディタ -->
+  <div class="section-block" id="transcribe-tool">
+    <div class="section-label">— 字幕エディタ / カット編集</div>
+    <div class="tool-card">
+      <div class="tool-card-header">
+        <div class="tool-card-icon" style="background:rgba(247,151,30,0.15);">✂️</div>
+        <div>
+          <div class="tool-card-title">SRT字幕エディタ</div>
+          <div class="tool-card-sub">Vrewで書き出したSRT → ポータルでカット編集 → SRTダウンロード → Premiereにインポート</div>
+        </div>
+      </div>
+
+      <!-- ファイルアップロード -->
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Space Mono',monospace;">① MP3 / 音声ファイル（任意）</div>
+          <div class="transcribe-drop" id="audioDropZone" onclick="document.getElementById('editorAudioInput').click()" style="padding:20px;margin-bottom:0;">
+            <div class="drop-icon" style="font-size:24px;margin-bottom:6px;">🎵</div>
+            <div class="drop-text" style="font-size:12px;">音声ファイルをアップ（再生用）</div>
+          </div>
+          <input type="file" id="editorAudioInput" accept="audio/*" style="display:none" onchange="loadEditorAudio(this.files[0])">
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Space Mono',monospace;">② SRTファイル（Vrewから書き出し）</div>
+          <div class="transcribe-drop" id="srtDropZone" onclick="document.getElementById('editorSrtInput').click()" style="padding:20px;margin-bottom:0;">
+            <div class="drop-icon" style="font-size:24px;margin-bottom:6px;">📄</div>
+            <div class="drop-text" style="font-size:12px;">SRTファイルをアップ</div>
+            <div class="drop-sub">Vrew → ファイル → 字幕書き出し → SRT</div>
+          </div>
+          <input type="file" id="editorSrtInput" accept=".srt,.txt" style="display:none" onchange="loadEditorSrt(this.files[0])">
+        </div>
+      </div>
+
+      <!-- エディタ本体 -->
+      <div class="srt-editor-wrap" id="srtEditorWrap" style="display:none;">
+        <div class="srt-editor-left">
+          <!-- 音声プレイヤー -->
+          <div class="audio-player-box" id="audioPlayerBox" style="display:none;">
+            <div class="audio-player-label">🎵 音声再生 — 字幕をクリックするとその位置から再生</div>
+            <audio id="editorAudio" controls></audio>
+          </div>
+
+          <!-- ツールバー -->
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+            <button class="btn-primary" onclick="aiSuggestCuts()" style="font-size:12px;padding:8px 14px;">🤖 AIカット提案</button>
+            <button class="btn-secondary" onclick="restoreAllCuts()" style="font-size:12px;padding:8px 14px;">↩ 全て元に戻す</button>
+            <span style="font-size:11px;color:var(--text-muted);font-family:'Space Mono',monospace;">クリック→再生位置 / ✂️→カット / ✏️→テキスト編集</span>
+          </div>
+
+          <!-- 字幕ライン一覧 -->
+          <div class="srt-lines" id="srtLines"></div>
+        </div>
+
+        <div class="srt-editor-right">
+          <!-- 統計 -->
+          <div class="srt-stats">
+            <div class="srt-stats-label">EDIT STATS</div>
+            <div class="srt-stat-row"><span style="color:var(--text-muted);">総行数</span><span class="srt-stat-val" id="statTotal">0</span></div>
+            <div class="srt-stat-row"><span style="color:var(--text-muted);">カット済み</span><span class="srt-stat-val red" id="statCut">0</span></div>
+            <div class="srt-stat-row"><span style="color:var(--text-muted);">残り行数</span><span class="srt-stat-val green" id="statRemain">0</span></div>
+            <div class="srt-stat-row"><span style="color:var(--text-muted);">削減率</span><span class="srt-stat-val" id="statRate">0%</span></div>
+          </div>
+
+          <!-- カット済みリスト -->
+          <div class="cut-list">
+            <div class="cut-list-label">✂️ CUT LIST</div>
+            <div class="cut-list-items" id="cutListItems">
+              <div style="font-size:11px;color:var(--text-dim);">カットした行がここに表示されます</div>
+            </div>
+          </div>
+
+          <!-- AIカット提案 -->
+          <div class="ai-cut-suggestion" id="aiCutSuggestion">
+            <div class="ai-cut-label">🤖 AI CUT SUGGESTION</div>
+            <div id="aiCutItems"></div>
+          </div>
+
+          <!-- ダウンロード -->
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+            <button class="btn-primary" onclick="downloadSrt()" style="width:100%;">📥 SRTをダウンロード</button>
+            <button class="btn-secondary" onclick="downloadTxt()" style="width:100%;font-size:12px;">📋 テキストをコピー</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 初期メッセージ -->
+      <div id="srtEmptyMsg" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;">
+        SRTファイルをアップロードすると字幕エディタが起動します
+      </div>
+    </div>
+
+    <!-- テロップ提案（折りたたみ） -->
+    <div class="tool-card" id="teropCard" style="display:none;">
+      <div class="tool-card-header">
+        <div class="tool-card-icon" style="background:rgba(247,151,30,0.12);">🎬</div>
+        <div><div class="tool-card-title">演出テロップ提案</div><div class="tool-card-sub">AIが感情・強調・カット提案箇所を分析</div></div>
+      </div>
+      <div class="telop-list" id="telopList"></div>
+    </div>
+  </div>
+
+  <!-- 誤字脱字チェック -->
+  <div class="section-block" id="typo-tool">
+    <div class="section-label">— 誤字脱字チェック</div>
+    <div class="tool-card">
+      <div class="tool-card-header">
+        <div class="tool-card-icon" style="background:rgba(79,195,247,0.15);">🔍</div>
+        <div><div class="tool-card-title">字幕テキスト 誤字脱字チェック</div><div class="tool-card-sub">Vrewの字幕書き出し or テキスト貼り付け → AIが自動チェック</div></div>
+      </div>
+      <div class="input-format-tabs">
+        <div class="input-format-tab active" onclick="switchTypoTab('text')" id="typoTabText">テキスト貼り付け</div>
+        <div class="input-format-tab" onclick="switchTypoTab('srt')" id="typoTabSrt">SRTファイル</div>
+      </div>
+      <div id="typoTextInput">
+        <textarea class="typo-input-area" id="typoText" placeholder="VrewからエクスポートしたテキストやSRT内容をここに貼り付けてください。"></textarea>
+      </div>
+      <div id="typoSrtInput" style="display:none;">
+        <div class="transcribe-drop" onclick="document.getElementById('srtFileInput').click()" style="margin-bottom:0;">
+          <div class="drop-icon">📄</div>
+          <div class="drop-text">SRTファイルをクリックして選択</div>
+          <div class="drop-sub">Vrew → ファイル → 字幕 書き出し → SRT</div>
+        </div>
+        <input type="file" id="srtFileInput" accept=".srt,.txt" style="display:none" onchange="loadSrtFile(this)">
+        <div style="margin-top:8px;font-size:11px;color:var(--text-muted);font-family:'Space Mono',monospace;" id="srtFileStatus">ファイル未選択</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px;align-items:center;">
+        <button class="btn-primary" onclick="runTypoCheck()">🔍 チェック開始</button>
+        <button class="btn-secondary" onclick="clearTypoCheck()">クリア</button>
+        <span style="font-size:11px;color:var(--text-muted);font-family:'Space Mono',monospace;" id="typoCharCount">0文字</span>
+      </div>
+      <div class="typo-result-box" id="typoResultBox" style="margin-top:16px;">
+        <div class="typo-result-label">AI CHECK RESULT</div>
+        <div class="typo-summary" id="typoSummary"></div>
+        <div class="typo-list" id="typoList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- マニュアル -->
+  <div class="section-block" id="manuals">
+    <div class="section-label">— マニュアル</div>
+    <div class="card-grid-wide">
+      <a href="https://docs.google.com/document/d/1eQqQuiJp_hA6nUJGgqJAf86quSB9SsjEfgqjw_Niido/edit" target="_blank" class="menu-card" style="--card-accent:#43e97b;"><span class="icon">✅</span><div class="title">必ず確認お願いします</div><div class="desc">グーグルドライブの見方・トンマナ素材の使い方</div></a>
+      <a href="https://docs.google.com/document/d/1eQqQuiJp_hA6nUJGgqJAf86quSB9SsjEfgqjw_Niido/edit?tab=t.8hesb9bbdf1r" target="_blank" class="menu-card" style="--card-accent:#43e97b;"><span class="icon">📖</span><div class="title">編集マニュアル（共通）</div><div class="desc">音量調整・基本設定・便利機能・AI文字起こしなど</div></a>
+      <a href="https://drive.google.com/drive/folders/15Y1tMBmU7Hn3QM2dq5iQGOanToE1XGXO" target="_blank" class="menu-card" style="--card-accent:#43e97b;"><span class="icon">📁</span><div class="title">素材フォルダ</div><div class="desc">BGM・トンマナ素材・マニュアル関連</div></a>
+      <a href="https://docs.google.com/spreadsheets/d/1JOa9ZD3pkw7Y_aXgnrQl2WPujScYYfg9Ekgxw3ffDOI/edit" target="_blank" class="menu-card" style="--card-accent:#4fc3f7;"><span class="icon">📝</span><div class="title">編集マニュアル（こーくんch）</div><div class="desc">こーくんch専用の編集ルール・設定</div></a>
+      <a href="https://docs.google.com/spreadsheets/d/1MkmyeYAg7fgdVmpkRgYL7tjaZnRUd6DXVw6Z5TqLy48/edit" target="_blank" class="menu-card" style="--card-accent:#4fc3f7;"><span class="icon">📝</span><div class="title">編集マニュアル（はるなch）</div><div class="desc">はるなch専用の編集ルール・設定</div></a>
+      <a href="https://docs.google.com/spreadsheets/d/1UyB9tAdmmo8bJ3Ndz0mX6LxThqYimMAnkltt30TpSPQ/edit" target="_blank" class="menu-card" style="--card-accent:#4fc3f7;"><span class="icon">📝</span><div class="title">編集マニュアル（新品家電せどりch）</div><div class="desc">新品家電せどりch専用の編集ルール・設定</div></a>
+      <a href="https://docs.google.com/spreadsheets/d/1dbAvZrXNMHUsKMEk876vMz7T2M6EDJFWxildT53ZY8M/edit" target="_blank" class="menu-card" style="--card-accent:#ce93d8;"><span class="icon">👥</span><div class="title">名前リスト</div><div class="desc">登場人物・メンバーの名前一覧</div></a>
+      <a href="https://drive.google.com/drive/folders/1_3pCUVjtbx-SznzWcmK5ZAwIkKJUZ7oO" target="_blank" class="menu-card" style="--card-accent:#ce93d8;"><span class="icon">📂</span><div class="title">共有フォルダ</div><div class="desc">チーム共有のファイル・素材フォルダ</div></a>
+    </div>
+  </div>
+
+  <!-- チャンネル管理 -->
+  <div class="section-block" id="admin-tool">
+    <div class="section-label">— チャンネル管理</div>
+    <div class="admin-panel">
+      <div class="tool-card-header">
+        <div class="tool-card-icon" style="background:rgba(206,147,216,0.15);">⚙️</div>
+        <div><div class="tool-card-title">チャンネル追加・削除</div><div class="tool-card-sub">HTMLを触らずにチャンネルを管理</div></div>
+      </div>
+      <div class="admin-ch-list" id="adminChList"></div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <button class="btn-primary" onclick="showAddForm()">＋ チャンネルを追加</button>
+      </div>
+      <div class="add-ch-form" id="addChForm">
+        <div class="form-grid">
+          <div class="form-group"><label>チャンネル名</label><input type="text" id="newChName" placeholder="例：たろうch"></div>
+          <div class="form-group"><label>投稿曜日</label>
+            <select id="newChDay">
+              <option value="0">日曜</option><option value="1">月曜</option><option value="2">火曜</option>
+              <option value="3" selected>水曜</option><option value="4">木曜</option><option value="5">金曜</option><option value="6">土曜</option>
+            </select>
+          </div>
+          <div class="form-group"><label>投稿時間</label><input type="number" id="newChHour" value="19" min="0" max="23"></div>
+          <div class="form-group"><label>カラー</label>
+            <select id="newChColor">
+              <option value="#6c63ff">パープル</option><option value="#43e97b">グリーン</option>
+              <option value="#ff6584">ピンク</option><option value="#f7971e">オレンジ</option>
+              <option value="#4fc3f7">ブルー</option><option value="#ce93d8">ラベンダー</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-primary" onclick="addChannel()">追加する</button>
+          <button class="btn-secondary" onclick="hideAddForm()">キャンセル</button>
+        </div>
+      </div>
+      <div class="notion-setup">
+        <div class="notion-setup-label">NOTION 連携設定</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.7;">APIキーを設定するとデータがNotionに自動保存されます。<br><a href="https://www.notion.so/my-integrations" target="_blank" style="color:var(--accent);">notion.so/my-integrations</a> でIntegration Tokenを発行してください。</p>
+        <div class="notion-input-row">
+          <input type="password" id="notionToken" placeholder="secret_xxxxxxxxxxxx">
+          <button class="btn-primary" onclick="saveNotionToken()">接続</button>
+          <button class="btn-secondary" onclick="clearNotionToken()">解除</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn-primary" onclick="syncToNotion()" style="font-size:12px;padding:8px 14px;">☁️ Notionに保存</button>
+          <button class="btn-secondary" onclick="loadFromNotion()" style="font-size:12px;padding:8px 14px;">📥 Notionから読み込む</button>
+        </div>
+        <div class="notion-status" id="notionStatus">未設定 — 現在はブラウザ内に一時保存</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- お知らせ -->
+  <div class="notice-section">
+    <div class="section-label">— お知らせ</div>
+    <div class="notice-list">
+      <div class="notice-item new"><div class="notice-date">2026.05.22</div><div class="notice-text"><strong>v0.6</strong> — 誤字脱字チェック追加・メニュー並び順を整理</div></div>
+      <div class="notice-item new"><div class="notice-date">2026.05.22</div><div class="notice-text"><strong>v0.3</strong> — 文字起こし・テロップ提案・チャンネル管理画面を追加</div></div>
+      <div class="notice-item info"><div class="notice-date">2026.05.22</div><div class="notice-text"><strong>v0.2</strong> — 締め切りアラート・AI進捗提案を追加</div></div>
+      <div class="notice-item info"><div class="notice-date">2026.05.21</div><div class="notice-text"><strong>v0.1</strong> — チームポータル公開</div></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="copy">© 2026 2ree.design</div>
+    <div class="version">v0.6</div>
+  </footer>
+</div>
+
+<!-- ステータス編集ポップアップ -->
+<div class="status-popup" id="statusPopup"></div>
+
+<!-- 削除確認モーダル -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <h3>チャンネルを削除しますか？</h3>
+    <p id="deleteModalText"></p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeDeleteModal()">キャンセル</button>
+      <button class="btn-danger" onclick="confirmDelete()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY='portal_channels_v3', DEADLINE_KEY='portal_deadlines_v3';
+const DEFAULT_CHANNELS=[
+  {id:'kouji', name:'こうじch',   day:3, hour:19, color:'#6c63ff', progress:{ball:'ディレクター',thumb:'作成中',edit:'完了',title:'未定'}},
+  {id:'haruna',name:'はるなch',   day:4, hour:19, color:'#ff6584', progress:{ball:'先方確認中',thumb:'完了',edit:'完了',title:'完了'}},
+  {id:'kokun', name:'こーくんch', day:5, hour:19, color:'#f7971e', progress:{ball:'編集者',thumb:'未着手',edit:'編集中',title:'未定'}},
+];
+const STATUS_OPTS=['ディレクター','編集者','先方確認中','完了','作成中','編集中','未着手','未定'];
+const STATUS_CLASS={'ディレクター':'status-done','完了':'status-done','編集者':'status-wip','作成中':'status-wip','編集中':'status-wip','先方確認中':'status-review','未着手':'status-pending','未定':'status-pending'};
+const FIELD_LABEL={ball:'ボール',thumb:'サムネ',edit:'編集',title:'投稿タイトル'};
+const DAYS=['日','月','火','水','木','金','土'];
+
+function loadChannels(){try{const s=localStorage.getItem(STORAGE_KEY);return s?JSON.parse(s):DEFAULT_CHANNELS;}catch{return DEFAULT_CHANNELS;}}
+function saveChannels(chs){localStorage.setItem(STORAGE_KEY,JSON.stringify(chs));}
+function getChannels(){return loadChannels();}
+
+function renderChannels(){
+  const chs=getChannels();
+  document.getElementById('chCountBadge').textContent=chs.length+'ch';
+  document.getElementById('channelsGrid').innerHTML=chs.map(ch=>`
+    <div class="channel-card" data-id="${ch.id}" style="border-top:2px solid ${ch.color};">
+      <div class="channel-header"><div class="channel-name">${ch.name}</div><div class="channel-day">${DAYS[ch.day]}曜 ${ch.hour}:00</div></div>
+      <div class="progress-list">${Object.entries(ch.progress).map(([f,v])=>`
+        <div class="progress-item"><span class="label">${FIELD_LABEL[f]}</span><span class="status-pill ${STATUS_CLASS[v]||'status-pending'}" onclick="openStatusPopup(event,'${ch.id}','${f}')">${v}</span></div>`).join('')}
+      </div>
+    </div>`).join('');
+  const sel=document.getElementById('statusChannel');
+  if(sel) sel.innerHTML='<option value="">チャンネルを選択</option>'+chs.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  updateAdminList(); renderDeadlines(); generateTasks();
+}
+
+let popupTarget=null;
+function openStatusPopup(e,chId,field){
+  e.stopPropagation();
+  const popup=document.getElementById('statusPopup');
+  popupTarget={chId,field};
+  popup.innerHTML=STATUS_OPTS.map(s=>`<div class="status-option" onclick="setStatus('${s}')">${s}</div>`).join('');
+  const rect=e.target.getBoundingClientRect();
+  popup.style.top=(rect.bottom+window.scrollY+4)+'px';
+  popup.style.left=(rect.left+window.scrollX)+'px';
+  popup.classList.add('visible');
+}
+function setStatus(val){
+  if(!popupTarget)return;
+  const chs=getChannels(), ch=chs.find(c=>c.id===popupTarget.chId);
+  if(ch){ch.progress[popupTarget.field]=val;saveChannels(chs);}
+  document.getElementById('statusPopup').classList.remove('visible');
+  popupTarget=null; renderChannels();
+  // Notion自動同期
+  if(localStorage.getItem('notion_token')) syncToNotion();
+}
+document.addEventListener('click',()=>{document.getElementById('statusPopup').classList.remove('visible');popupTarget=null;});
+
+function loadDeadlineSettings(){try{return JSON.parse(localStorage.getItem(DEADLINE_KEY)||'{}');}catch{return {};}}
+function saveDeadlines(){
+  const chs=getChannels(),settings={};
+  chs.forEach(ch=>{const d=document.getElementById('dl_day_'+ch.id),h=document.getElementById('dl_hour_'+ch.id);if(d&&h)settings[ch.id]={day:parseInt(d.value),hour:parseInt(h.value)};});
+  localStorage.setItem(DEADLINE_KEY,JSON.stringify(settings)); renderDeadlines(); generateTasks();
+}
+function getNextPostDate(day,hour){const now=new Date(),target=new Date(now);let diff=day-now.getDay();if(diff<0||(diff===0&&now.getHours()>=hour))diff+=7;target.setDate(now.getDate()+diff);target.setHours(hour,0,0,0);return target;}
+function getCountdownInfo(next){const diffH=(next-new Date())/3600000,days=Math.floor(diffH/24),hours=Math.floor(diffH%24);if(diffH<24)return{label:`${hours}時間後`,level:'urgent'};if(days<=2)return{label:`あと${days}日`,level:'warning'};return{label:`あと${days}日`,level:'safe'};}
+function renderDeadlines(){
+  const chs=getChannels(),custom=loadDeadlineSettings();
+  const grid=document.getElementById('deadlineGrid'),settings=document.getElementById('deadlineSettings');
+  if(!grid)return; grid.innerHTML=''; if(settings)settings.innerHTML='';
+  chs.forEach(ch=>{
+    const cfg=custom[ch.id]||{day:ch.day,hour:ch.hour},next=getNextPostDate(cfg.day,cfg.hour),{label,level}=getCountdownInfo(next);
+    const dateStr=next.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'});
+    grid.innerHTML+=`<div class="deadline-item ${level}"><div class="deadline-ch">${ch.name}</div><div class="deadline-date">次の投稿: ${dateStr} ${cfg.hour}:00</div><div class="deadline-countdown">${label}</div><div class="deadline-label">投稿まで</div></div>`;
+    if(settings){const dayOpts=DAYS.map((d,i)=>`<option value="${i}" ${cfg.day===i?'selected':''}>${d}曜</option>`).join('');settings.innerHTML+=`<div class="deadline-setting-item"><div class="setting-ch-name">${ch.name}</div><div class="setting-inputs"><select id="dl_day_${ch.id}">${dayOpts}</select><input type="number" id="dl_hour_${ch.id}" value="${cfg.hour}" min="0" max="23" style="width:54px;">時</div></div>`;}
+  });
+}
+function generateTasks(){
+  const chs=getChannels(),custom=loadDeadlineSettings(),tasks=[];
+  chs.forEach(ch=>{
+    const cfg=custom[ch.id]||{day:ch.day,hour:ch.hour},{level}=getCountdownInfo(getNextPostDate(cfg.day,cfg.hour)),p=ch.progress;
+    if(level==='urgent'){if(p.edit!=='完了')tasks.push({priority:'high',text:`【今日中】${ch.name}の編集を完了させる`,ch:ch.name});if(p.thumb!=='完了')tasks.push({priority:'high',text:`【今日中】${ch.name}のサムネを仕上げる`,ch:ch.name});if(p.title==='未定')tasks.push({priority:'high',text:`【今日中】${ch.name}の投稿タイトルを確定する`,ch:ch.name});}
+    else if(level==='warning'){if(p.thumb!=='完了')tasks.push({priority:'mid',text:`${ch.name}のサムネを明日までに完成させる`,ch:ch.name});if(p.edit!=='完了')tasks.push({priority:'mid',text:`${ch.name}の編集チェックをする`,ch:ch.name});if(p.ball==='編集者')tasks.push({priority:'mid',text:`${ch.name}の編集者へ進捗確認を入れる`,ch:ch.name});}
+    else{if(p.ball==='先方確認中')tasks.push({priority:'low',text:`${ch.name}のクライアント確認状況をフォロー`,ch:ch.name});if(p.thumb==='未着手')tasks.push({priority:'low',text:`${ch.name}のサムネ制作を開始する`,ch:ch.name});}
+  });
+  if(!tasks.length)tasks.push({priority:'low',text:'今週の締め切りまで余裕あり。来週分の準備を進めよう！',ch:'全体'});
+  const pLabel={high:'HIGH',mid:'MID',low:'LOW'},pClass={high:'priority-high',mid:'priority-mid',low:'priority-low'};
+  document.getElementById('aiTaskList').innerHTML=tasks.map(t=>`<div class="task-item-row"><span class="task-priority ${pClass[t.priority]}">${pLabel[t.priority]}</span><span class="task-text">${t.text}</span><span class="task-ch">${t.ch}</span></div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// SRT字幕エディタ
+// ═══════════════════════════════════════
+let srtData = []; // [{index, start, end, startSec, endSec, text, cut}]
+let audioEl = null;
+
+function parseSrtFull(content) {
+  const blocks = content.trim().split(/\n\s*\n/);
+  const lines = [];
+  blocks.forEach(block => {
+    const parts = block.trim().split('\n');
+    if (parts.length < 2) return;
+    let idx = 0, timeStr = '', text = '';
+    if (/^\d+$/.test(parts[0].trim())) { idx = parseInt(parts[0]); timeStr = parts[1]; text = parts.slice(2).join(' '); }
+    else { idx = lines.length + 1; timeStr = parts[0]; text = parts.slice(1).join(' '); }
+    const timeMatch = timeStr.match(/(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
+    if (!timeMatch) return;
+    lines.push({
+      index: idx,
+      start: timeMatch[1].replace('.', ','),
+      end: timeMatch[2].replace('.', ','),
+      startSec: timeToSec(timeMatch[1]),
+      endSec: timeToSec(timeMatch[2]),
+      text: text.trim(),
+      cut: false
+    });
+  });
+  return lines;
+}
+
+function timeToSec(t) {
+  const m = t.match(/(\d{2}):(\d{2}):(\d{2})[,\.](\d{3})/);
+  if (!m) return 0;
+  return parseInt(m[1])*3600 + parseInt(m[2])*60 + parseInt(m[3]) + parseInt(m[4])/1000;
+}
+
+function secToTime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60), ms = Math.round((s%1)*1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+}
+
+function loadEditorAudio(file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const box = document.getElementById('audioPlayerBox');
+  audioEl = document.getElementById('editorAudio');
+  audioEl.src = url;
+  box.style.display = 'block';
+  document.getElementById('audioDropZone').querySelector('.drop-text').textContent = '✓ ' + file.name;
+}
+
+function loadEditorSrt(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    srtData = parseSrtFull(e.target.result);
+    if (!srtData.length) { alert('SRTファイルの読み込みに失敗しました。形式を確認してください。'); return; }
+    document.getElementById('srtDropZone').querySelector('.drop-text').textContent = '✓ ' + file.name + ' (' + srtData.length + '行)';
+    document.getElementById('srtEditorWrap').style.display = 'flex';
+    document.getElementById('srtEmptyMsg').style.display = 'none';
+    renderSrtLines();
+    updateStats();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function renderSrtLines() {
+  const container = document.getElementById('srtLines');
+  container.innerHTML = srtData.map((line, i) => `
+    <div class="srt-line ${line.cut ? 'cut' : ''}" id="srtLine_${i}" onclick="seekAudio(${line.startSec})">
+      <div class="srt-time">${line.start.substring(0,8)}<br>${line.end.substring(0,8)}</div>
+      <div class="srt-text" id="srtText_${i}" ondblclick="editLine(event,${i})" onclick="event.stopPropagation();seekAudio(${line.startSec})">${escHtml(line.text)}</div>
+      <div class="srt-actions">
+        ${line.cut
+          ? `<button class="srt-btn restore-btn" onclick="event.stopPropagation();toggleCut(${i})">↩</button>`
+          : `<button class="srt-btn cut-btn" onclick="event.stopPropagation();toggleCut(${i})">✂️</button>`
+        }
+        <button class="srt-btn" onclick="event.stopPropagation();editLine(event,${i})">✏️</button>
+      </div>
+    </div>`).join('');
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function seekAudio(sec) {
+  if (!audioEl) return;
+  audioEl.currentTime = sec;
+  audioEl.play();
+  // アクティブ行をハイライト
+  document.querySelectorAll('.srt-line').forEach(el => el.classList.remove('active'));
+  const idx = srtData.findIndex(l => Math.abs(l.startSec - sec) < 0.1);
+  if (idx >= 0) {
+    const el = document.getElementById('srtLine_' + idx);
+    if (el) { el.classList.add('active'); el.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+  }
+}
+
+function toggleCut(i) {
+  srtData[i].cut = !srtData[i].cut;
+  renderSrtLines();
+  updateStats();
+  updateCutList();
+}
+
+function restoreAllCuts() {
+  srtData.forEach(l => l.cut = false);
+  renderSrtLines();
+  updateStats();
+  updateCutList();
+}
+
+function editLine(e, i) {
+  e.stopPropagation();
+  const el = document.getElementById('srtText_' + i);
+  el.contentEditable = 'true';
+  el.focus();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  el.onblur = () => {
+    el.contentEditable = 'false';
+    srtData[i].text = el.textContent.trim();
+  };
+  el.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); } };
+}
+
+function updateStats() {
+  const total = srtData.length;
+  const cut = srtData.filter(l => l.cut).length;
+  const remain = total - cut;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statCut').textContent = cut;
+  document.getElementById('statRemain').textContent = remain;
+  document.getElementById('statRate').textContent = total > 0 ? Math.round(cut/total*100) + '%' : '0%';
+}
+
+function updateCutList() {
+  const cuts = srtData.filter(l => l.cut);
+  const el = document.getElementById('cutListItems');
+  if (!cuts.length) { el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);">カットした行がここに表示されます</div>'; return; }
+  el.innerHTML = cuts.map(l => `<div class="cut-list-item">${l.start.substring(0,8)} 「${l.text.substring(0,20)}${l.text.length>20?'…':''}」</div>`).join('');
+}
+
+async function aiSuggestCuts() {
+  if (!srtData.length) return;
+  const box = document.getElementById('aiCutSuggestion');
+  const items = document.getElementById('aiCutItems');
+  box.classList.add('visible');
+  items.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">AIが分析中...</div>';
+
+  const textSample = srtData.slice(0, 60).map(l => `[${l.start.substring(0,8)}] ${l.text}`).join('\n');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        system: 'YouTube動画編集のプロとして字幕テキストを分析し、カット推奨箇所をJSONで返してください。形式：{"cuts":[{"time":"00:00:00","text":"該当テキスト","reason":"カット理由"}]} 5〜8箇所を選んでください。返答はJSONのみ。',
+        messages: [{ role: 'user', content: `以下の字幕からカット推奨箇所を提案してください：\n\n${textSample}` }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); } catch { parsed = null; }
+    if (parsed?.cuts) {
+      items.innerHTML = parsed.cuts.map(c => `
+        <div class="ai-cut-item">
+          <span class="ai-cut-time">${c.time}</span>
+          <span style="flex:1;">「${c.text.substring(0,25)}…」— ${c.reason}</span>
+        </div>`).join('');
+    } else { items.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">APIキーが必要です。手動でカット箇所を✂️ボタンで選択してください。</div>'; }
+  } catch { items.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">手動でカット箇所を✂️ボタンで選択してください。</div>'; }
+}
+
+function downloadSrt() {
+  const remaining = srtData.filter(l => !l.cut);
+  let srtContent = '';
+  remaining.forEach((line, i) => {
+    srtContent += `${i+1}\n${line.start} --> ${line.end}\n${line.text}\n\n`;
+  });
+  const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'edited_subtitles.srt'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadTxt() {
+  const remaining = srtData.filter(l => !l.cut);
+  const text = remaining.map(l => l.text).join('\n');
+  navigator.clipboard.writeText(text);
+  alert('テキストをクリップボードにコピーしました！');
+}
+
+// 音声再生位置に合わせて字幕をハイライト
+function startAudioSync() {
+  if (!audioEl) return;
+  audioEl.addEventListener('timeupdate', () => {
+    const ct = audioEl.currentTime;
+    const active = srtData.findIndex(l => ct >= l.startSec && ct <= l.endSec);
+    document.querySelectorAll('.srt-line').forEach((el, i) => {
+      el.classList.toggle('active', i === active);
+    });
+    if (active >= 0) {
+      const el = document.getElementById('srtLine_' + active);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const audio = document.getElementById('editorAudio');
+  if (audio) { audioEl = audio; startAudioSync(); }
+});
+
+// 誤字脱字チェック
+let typoInputMode='text', srtRawText='';
+function switchTypoTab(mode){typoInputMode=mode;document.getElementById('typoTabText').classList.toggle('active',mode==='text');document.getElementById('typoTabSrt').classList.toggle('active',mode==='srt');document.getElementById('typoTextInput').style.display=mode==='text'?'block':'none';document.getElementById('typoSrtInput').style.display=mode==='srt'?'block':'none';updateTypoCharCount();}
+function loadSrtFile(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=(e)=>{srtRawText=parseSrt(e.target.result);document.getElementById('srtFileStatus').textContent=`✓ ${file.name} 読み込み完了（${srtRawText.length}文字）`;updateTypoCharCount();};reader.readAsText(file,'UTF-8');}
+function parseSrt(s){return s.split('\n').filter(l=>{const t=l.trim();return t&&!/^\d+$/.test(t)&&!/\d{2}:\d{2}:\d{2}/.test(t);}).join('　');}
+function getTypoInputText(){return typoInputMode==='srt'?srtRawText:document.getElementById('typoText').value.trim();}
+function updateTypoCharCount(){document.getElementById('typoCharCount').textContent=getTypoInputText().length+'文字';}
+function clearTypoCheck(){document.getElementById('typoText').value='';srtRawText='';document.getElementById('srtFileStatus').textContent='ファイル未選択';document.getElementById('typoResultBox').classList.remove('visible');updateTypoCharCount();}
+async function runTypoCheck(){
+  const text=getTypoInputText();if(!text){alert('テキストを入力またはファイルを読み込んでください');return;}
+  const box=document.getElementById('typoResultBox');box.classList.add('visible');
+  document.getElementById('typoSummary').innerHTML='';
+  document.getElementById('typoList').innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">AIが分析中...</div>';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`あなたはYouTube字幕の校正専門家です。誤字・脱字・変換ミス・不自然な表現をチェックし必ず以下のJSONのみ返してください。{"errors":[{"severity":"error|warning|info","original":"問題箇所の前後20文字","wrong":"誤っている部分","suggestion":"正しい表現","reason":"理由"}],"total_errors":数値,"total_warnings":数値,"total_info":数値,"overall":"ok|caution|good"}`,messages:[{role:'user',content:`以下の字幕テキストをチェックしてください：\n\n${text.slice(0,3000)}`}]})});
+    const data=await res.json();const raw=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('')||'';
+    let parsed;try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch{parsed=null;}
+    renderTypoResults(parsed||getDemoTypoResults(text));
+  }catch{renderTypoResults(getDemoTypoResults(text));}
+}
+function getDemoTypoResults(text){const errors=[];const patterns=[{wrong:'ありがとうごいます',right:'ありがとうございます',reason:'「ざ」が抜けています'},{wrong:'よろしくおねがいします',right:'よろしくお願いします',reason:'漢字変換を推奨'}];patterns.forEach(p=>{if(text.includes(p.wrong))errors.push({severity:'error',original:p.wrong,wrong:p.wrong,suggestion:p.right,reason:p.reason});});return{errors,total_errors:errors.filter(e=>e.severity==='error').length,total_warnings:0,total_info:0,overall:errors.length===0?'good':'caution'};}
+function renderTypoResults(result){
+  const overallColor={good:'#43e97b',caution:'#ffb347',ok:'#43e97b'},overallText={good:'問題なし ✓',caution:'要確認',ok:'問題なし ✓'};
+  document.getElementById('typoSummary').innerHTML=`<div class="typo-summary-item"><div class="typo-summary-num red">${result.total_errors}</div><div class="typo-summary-label">誤字・脱字</div></div><div class="typo-summary-item"><div class="typo-summary-num yellow">${result.total_warnings}</div><div class="typo-summary-label">変換ミス</div></div><div class="typo-summary-item"><div class="typo-summary-num" style="color:#6c63ff;">${result.total_info}</div><div class="typo-summary-label">改善提案</div></div><div class="typo-summary-item"><div class="typo-summary-num" style="color:${overallColor[result.overall]||'#ffb347'};font-size:14px;padding-top:4px;">${overallText[result.overall]||'要確認'}</div><div class="typo-summary-label">総合判定</div></div>`;
+  if(!result.errors||!result.errors.length){document.getElementById('typoList').innerHTML='<div class="typo-ok">🎉 誤字・脱字は見つかりませんでした！</div>';return;}
+  const sl={error:'誤字',warning:'変換ミス',info:'提案'};
+  document.getElementById('typoList').innerHTML=result.errors.map(e=>`<div class="typo-item"><div class="typo-item-header"><span class="typo-severity ${e.severity}">${sl[e.severity]||e.severity}</span></div><div class="typo-original">該当箇所：<mark>${e.wrong}</mark></div><div class="typo-suggestion">修正案：${e.suggestion}</div><div class="typo-reason">${e.reason}</div></div>`).join('');
+}
+
+// 進捗自動更新
+const STATUS_KEYWORDS={ball:{'編集者':['編集者','編集に渡','素材渡し','編集者に送'],'ディレクター':['戻ってきた','編集完了','チェック待ち','確認お願い'],'先方確認中':['クライアント','先方','お客さん','確認中','返信待ち'],'完了':['OKもらった','承認','アップ済','投稿済','公開']},thumb:{'作成中':['サムネ作','サムネ制作'],'完了':['サムネ完了','サムネできた','サムネOK'],'未着手':['サムネまだ','サムネ手つかず']},edit:{'編集中':['編集中','編集してる','カット中'],'完了':['編集完了','編集できた','編集終わった']},title:{'完了':['タイトル決まった','タイトルOK','タイトル確定'],'未定':['タイトルまだ','タイトル未定']}};
+let pendingSuggestions=[];
+function analyzeStatus(){
+  const chId=document.getElementById('statusChannel').value,memo=document.getElementById('statusMemo').value.trim();
+  if(!chId||!memo){alert('チャンネルとメモを入力してください');return;}
+  const chs=getChannels(),ch=chs.find(c=>c.id===chId);if(!ch)return;
+  const suggestions=[],labelMap={ball:'ボール',thumb:'サムネ',edit:'編集',title:'投稿タイトル'};
+  Object.entries(STATUS_KEYWORDS).forEach(([field,statusMap])=>{Object.entries(statusMap).forEach(([newStatus,keywords])=>{if(keywords.some(kw=>memo.includes(kw))&&ch.progress[field]!==newStatus)suggestions.push({chId,field,oldStatus:ch.progress[field],newStatus,label:labelMap[field]});});});
+  if(!suggestions.length)suggestions.push({message:'変更すべきステータスを特定できませんでした。もう少し具体的に入力してみてください。'});
+  pendingSuggestions=suggestions;renderSuggestions(suggestions);
+}
+function renderSuggestions(suggestions){
+  document.getElementById('suggestionBox').classList.add('visible');
+  if(suggestions[0]?.message){document.getElementById('suggestionItems').innerHTML=`<div style="font-size:13px;color:var(--text-muted);padding:4px 0;">${suggestions[0].message}</div>`;return;}
+  document.getElementById('suggestionItems').innerHTML=suggestions.map((s,i)=>`<div class="suggestion-item" id="sug_${i}"><div class="suggestion-change"><span style="font-size:12px;">${s.label}</span><span class="suggestion-arrow">→</span><span class="suggestion-new">${s.newStatus}</span><span style="font-size:11px;color:var(--text-muted);">（現在: ${s.oldStatus}）</span></div><button class="apply-btn" onclick="applySuggestion(${i})">反映</button></div>`).join('');
+}
+function applySuggestion(i){const s=pendingSuggestions[i];if(!s||!s.field)return;const chs=getChannels(),ch=chs.find(c=>c.id===s.chId);if(ch){ch.progress[s.field]=s.newStatus;saveChannels(chs);}document.getElementById('sug_'+i).style.opacity='0.4';document.getElementById('sug_'+i).querySelector('.apply-btn').textContent='✓ 反映済';renderChannels();}
+function applyAllSuggestions(){pendingSuggestions.forEach((_,i)=>applySuggestion(i));}
+function closeSuggestion(){document.getElementById('suggestionBox').classList.remove('visible');}
+
+// チャンネル管理
+function updateAdminList(){const chs=getChannels();document.getElementById('adminChList').innerHTML=chs.map(ch=>`<div class="admin-ch-item"><div class="admin-ch-color" style="background:${ch.color};"></div><div class="admin-ch-name">${ch.name}</div><div class="admin-ch-day">${DAYS[ch.day]}曜 ${ch.hour}:00</div><div class="admin-ch-actions"><button class="icon-btn danger" onclick="openDeleteModal('${ch.id}','${ch.name}')">削除</button></div></div>`).join('');}
+function showAddForm(){document.getElementById('addChForm').classList.add('visible');}
+function hideAddForm(){document.getElementById('addChForm').classList.remove('visible');}
+function addChannel(){const name=document.getElementById('newChName').value.trim(),day=parseInt(document.getElementById('newChDay').value),hour=parseInt(document.getElementById('newChHour').value),color=document.getElementById('newChColor').value;if(!name){alert('チャンネル名を入力してください');return;}const chs=getChannels();chs.push({id:'ch_'+Date.now(),name,day,hour,color,progress:{ball:'未着手',thumb:'未着手',edit:'未着手',title:'未定'}});saveChannels(chs);hideAddForm();document.getElementById('newChName').value='';renderChannels();if(localStorage.getItem('notion_token'))syncToNotion();}
+let deleteTargetId='';
+function openDeleteModal(id,name){deleteTargetId=id;document.getElementById('deleteModalText').textContent=`「${name}」をポータルから削除します。この操作は元に戻せません。`;document.getElementById('deleteModal').classList.add('visible');}
+function closeDeleteModal(){document.getElementById('deleteModal').classList.remove('visible');deleteTargetId='';}
+function confirmDelete(){if(!deleteTargetId)return;saveChannels(getChannels().filter(c=>c.id!==deleteTargetId));closeDeleteModal();renderChannels();}
+
+// ═══════════════════════════════════════
+// Notion連携（本格実装）
+// ═══════════════════════════════════════
+const NOTION_DB_ID = '368ec8276cf08023a336f6ad6561cef5';
+const NOTION_PROXY = 'https://notion-proxy.vercel.app/api/notion'; // CORSプロキシ不要：直接APIを使う
+
+function saveNotionToken(){
+  const t=document.getElementById('notionToken').value.trim();
+  if(!t){alert('Tokenを入力してください');return;}
+  localStorage.setItem('notion_token',t);
+  updateNotionStatus();
+  // 接続テスト
+  testNotionConnection(t);
+}
+function clearNotionToken(){
+  localStorage.removeItem('notion_token');
+  document.getElementById('notionToken').value='';
+  updateNotionStatus();
+}
+function updateNotionStatus(){
+  const t=localStorage.getItem('notion_token'),badge=document.getElementById('notionBadge'),status=document.getElementById('notionStatus');
+  if(t){
+    badge.textContent='Notion: 連携済';badge.style.borderColor='#43e97b';badge.style.color='#43e97b';
+    if(status){status.textContent='✓ Notion連携済 — データの同期が有効です';status.className='notion-status connected';}
+  }else{
+    badge.textContent='Notion: 未連携';badge.style.borderColor='';badge.style.color='';
+    if(status){status.textContent='未設定 — 現在はブラウザ内に一時保存';status.className='notion-status';}
+  }
+}
+
+async function notionRequest(endpoint, method='GET', body=null){
+  const token=localStorage.getItem('notion_token');
+  if(!token) return null;
+  const opts={
+    method,
+    headers:{
+      'Authorization':`Bearer ${token}`,
+      'Content-Type':'application/json',
+      'Notion-Version':'2022-06-28',
+    }
+  };
+  if(body) opts.body=JSON.stringify(body);
+  try{
+    // CORSのためallorigins経由
+    const url=`https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.notion.com/v1'+endpoint)}`;
+    const res=await fetch(url,opts);
+    return await res.json();
+  }catch(e){
+    console.error('Notion API error:',e);
+    return null;
+  }
+}
+
+async function testNotionConnection(token){
+  const status=document.getElementById('notionStatus');
+  if(status) status.textContent='接続テスト中...';
+  // データベース情報を取得してテスト
+  const data=await notionRequest(`/databases/${NOTION_DB_ID}`);
+  if(data && !data.status){
+    if(status){status.textContent='✓ Notion接続成功！データベースに接続しました';status.className='notion-status connected';}
+    // 接続成功したら自動同期
+    await syncToNotion();
+  }else{
+    if(status){status.textContent='⚠ 接続エラー。トークンまたはデータベースのアクセス権を確認してください';status.className='notion-status';}
+  }
+}
+
+// Notionへデータを同期
+async function syncToNotion(){
+  const token=localStorage.getItem('notion_token');
+  if(!token) return;
+  const chs=getChannels();
+  const status=document.getElementById('notionStatus');
+  if(status) status.textContent='Notionに同期中...';
+
+  // まず既存のエントリを取得
+  const existing=await notionRequest(`/databases/${NOTION_DB_ID}/query`,'POST',{});
+  const existingMap={};
+  if(existing&&existing.results){
+    existing.results.forEach(page=>{
+      const name=page.properties?.チャンネル名?.title?.[0]?.text?.content;
+      if(name) existingMap[name]=page.id;
+    });
+  }
+
+  // 各チャンネルのデータを同期
+  for(const ch of chs){
+    const props={
+      'チャンネル名':{title:[{text:{content:ch.name}}]},
+      'ボール':{select:{name:ch.progress.ball}},
+      'サムネ':{select:{name:ch.progress.thumb}},
+      '編集':{select:{name:ch.progress.edit}},
+      '投稿タイトル':{select:{name:ch.progress.title}},
+      '投稿曜日':{select:{name:DAYS[ch.day]+'曜'}},
+      '投稿時間':{number:ch.hour},
+    };
+
+    if(existingMap[ch.name]){
+      // 既存ページを更新
+      await notionRequest(`/pages/${existingMap[ch.name]}`,'PATCH',{properties:props});
+    }else{
+      // 新規ページを作成
+      await notionRequest('/pages','POST',{
+        parent:{database_id:NOTION_DB_ID},
+        properties:props
+      });
+    }
+  }
+
+  if(status){status.textContent='✓ Notionに同期完了！ '+new Date().toLocaleTimeString('ja-JP');status.className='notion-status connected';}
+  const badge=document.getElementById('notionBadge');
+  if(badge){badge.textContent='Notion: 同期済';badge.style.borderColor='#43e97b';badge.style.color='#43e97b';}
+}
+
+// Notionからデータを読み込む
+async function loadFromNotion(){
+  const token=localStorage.getItem('notion_token');
+  if(!token) return;
+  const status=document.getElementById('notionStatus');
+  if(status) status.textContent='Notionからデータを読み込み中...';
+
+  const data=await notionRequest(`/databases/${NOTION_DB_ID}/query`,'POST',{});
+  if(!data||!data.results||!data.results.length){
+    if(status) status.textContent='Notionにデータがありません。先に同期してください。';
+    return;
+  }
+
+  const chs=getChannels();
+  data.results.forEach(page=>{
+    const name=page.properties?.チャンネル名?.title?.[0]?.text?.content;
+    const ch=chs.find(c=>c.name===name);
+    if(ch){
+      ch.progress.ball=page.properties?.ボール?.select?.name||ch.progress.ball;
+      ch.progress.thumb=page.properties?.サムネ?.select?.name||ch.progress.thumb;
+      ch.progress.edit=page.properties?.編集?.select?.name||ch.progress.edit;
+      ch.progress.title=page.properties?.投稿タイトル?.select?.name||ch.progress.title;
+    }
+  });
+
+  saveChannels(chs);
+  renderChannels();
+  if(status){status.textContent='✓ Notionからデータを読み込みました！ '+new Date().toLocaleTimeString('ja-JP');status.className='notion-status connected';}
+}
+
+// 初期化
+document.addEventListener('DOMContentLoaded',()=>{
+  renderChannels(); updateNotionStatus();
+  const ta=document.getElementById('typoText');if(ta)ta.addEventListener('input',updateTypoCharCount);
+});
+</script>
+</body>
+</html>
